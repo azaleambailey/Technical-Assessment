@@ -1,6 +1,6 @@
 # Background Video Filter System
 
-A full-stack web application that applies visual filters to video backgrounds while keeping people in full color. Built as a technical assessment demonstrating person segmentation, real-time video processing, and modern web development practices.
+A full-stack web application that applies visual filters to video backgrounds while keeping the subject in full color. Built as a technical assessment demonstrating person segmentation, real-time video processing, and modern web development practices.
 
 ## Project Objective
 
@@ -12,7 +12,7 @@ Create a system that distinguishes between a person (foreground) and the backgro
 
 ### Core Functionality
 1. **Person Detection**: Uses MediaPipe's selfie segmentation model to identify people in video frames
-2. **Background Segmentation**: Accurately separates the person from the background using AI
+2. **Background Segmentation**: Separates the person from the background
 3. **Selective Filtering**: Applies visual filters only to the background while preserving the person in color
 4. **Real-time Display**: Streams processed video with smooth playback
 
@@ -87,7 +87,7 @@ Technical-Assessment/
 - **pip**: Python package manager (comes with Python)
 - **npm or yarn**: Node.js package manager (comes with Node.js)
 
-### Quick Start (5 Minutes)
+### Quick Start
 
 #### 1. Backend Setup
 
@@ -126,19 +126,6 @@ npm start
 
 **Frontend is ready!** Browser will automatically open at `http://localhost:3000`
 
-### First Usage
-
-1. **Default Video Loads**: The app automatically loads a demo video
-2. **Try Filters**: 
-   - Click the **filter icon** on the left sidebar
-   - Select any filter (Grayscale, Sepia, Rio)
-   - Watch the background change instantly!
-3. **Upload Your Own**:
-   - Click the **upload icon** on the left sidebar
-   - Choose "Paste URL" for YouTube videos
-   - Or "Upload File" for local video files (max 100MB)
-4. **Enjoy**: Switch between filters in real-time with synchronized playback
-
 ### Troubleshooting
 
 **Backend won't start:**
@@ -155,19 +142,18 @@ npm start
 - Processing happens once, then results are cached
 - Subsequent filter switches are instant
 
-**CORS errors in browser:**
-- Ensure backend is running on port 8080
-- Check that CORS is enabled in Flask (already configured)
-
 ## How to Use
 
 ### Basic Workflow
 
 1. **Start Both Servers** (backend on :8080, frontend on :3000)
-2. **Load a Video** (default loads automatically)
-3. **Select Filter** from the sidebar menu
+2. **View Default Video**: The app automatically loads a demo video
+3. **Try Different Filters**: 
+   - Click the **filter icon** on the left sidebar to open the filter menu
+   - Select any filter (None, Grayscale, Sepia, Rio de Janeiro)
+   - Watch the background change instantly!
 4. **Watch Processing** (first time only - takes ~30 seconds per minute of video)
-5. **Switch Filters** instantly after initial processing
+5. **Switch Filters** instantly after initial processing - all variations stay perfectly synchronized
 
 ### Uploading Videos
 
