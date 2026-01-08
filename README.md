@@ -231,7 +231,7 @@ The backend uses **MediaPipe** for AI-powered person segmentation and **FFmpeg**
 6. Cache all versions using MD5 hash of video URL
 
 **Key Design Choice:**
-Processing all filters simultaneously saves time because reading frames and running AI are the slow parts—applying color filters is fast. This means first-time processing generates all filter variations at once, then serving any filter is instant.
+Processing all filters simultaneously saves time because reading frames and running AI are the slow parts, switch pre-loaded videos is fast. This means first-time processing generates all filter variations at once, then serving any filter is instant.
 
 ### Frontend Architecture
 
@@ -257,9 +257,6 @@ The frontend uses **synchronized multi-video** approach for instant filter switc
 - **Scalable Caching Strategy**: The current file-based caching system works well for moderate traffic but would require architectural changes for production-scale deployment. At scale, this could be addressed through:
   - Cloud-based object storage (S3, Google Cloud Storage) with CDN distribution
   - Distributed caching layer (Redis, Memcached) for metadata
-  - Background job processing with queue system (Celery, RabbitMQ)
-  - Automatic cache eviction policies based on usage patterns and storage limits
-  - Horizontal scaling with load balancing across multiple processing nodes
 
 ### User Experience Enhancements
 - **Enhanced Filter Controls**: Add user-configurable parameters for existing filters (intensity, saturation, contrast adjustments)
@@ -268,8 +265,6 @@ The frontend uses **synchronized multi-video** approach for instant filter switc
   - Frame processing completion percentage
   - Estimated time remaining
 - **Expanded Filter Library**: Add additional visual effects including:
-  - Gaussian and motion blur
   - Edge detection and artistic effects
   - Custom color grading presets
   - Background replacement with static images or videos
-- **Playback Controls**: Add frame-by-frame navigation, playback speed adjustment, and video trimming capabilities
