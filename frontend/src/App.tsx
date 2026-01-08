@@ -112,119 +112,126 @@ const App: React.FC = () => {
   }, [selectedFilter, filters]);
   
   return (
-    <div className="container">
-      <div style={{
+    <>
+      <div className="banner-header" style={{
         position: 'sticky',
         top: 0,
         backgroundColor: 'rgba(255, 61, 0, 1)',
         color: 'white',
-        padding: '20px',
-        textAlign: 'center',
+        padding: '20px 20px 20px 40px',
+        textAlign: 'left',
         zIndex: 1000,
-        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+        boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+        borderRadius: '20px',
+        margin: '20px 20px 20px 20px'
       }}>
         <h1 style={{ 
           margin: 0, 
-          fontSize: '28px', 
-          fontWeight: 'bold',
-          fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+          fontSize: '36px', 
+          fontWeight: 800,
+          fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+          textTransform: 'uppercase',
+          letterSpacing: '-0.02em'
         }}>
           Background Video Filter
         </h1>
       </div>
       
-      <div style={{ textAlign: 'center', padding: '20px' }}>
-        <p style={{ color: '#666', marginBottom: '30px' }}>
-          Instant background filters with person segmentation
-        </p>
-        
-        <div style={{
-          marginBottom: '20px',
-          padding: '15px',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '8px'
-        }}>
-          <h3 style={{ marginTop: 0 }}>Background Filter</h3>
+      <div style={{ padding: '0 20px' }}>
+        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+          <p style={{ color: '#666', marginBottom: '30px' }}>
+            Instant background filters with person segmentation
+          </p>
+          
           <div style={{
-            display: 'flex',
-            gap: '10px',
-            justifyContent: 'center',
-            flexWrap: 'wrap'
+            marginBottom: '20px',
+            padding: '15px',
+            backgroundColor: '#f5f5f5',
+            borderRadius: '8px'
+          }}>
+            <h3 style={{ marginTop: 0 }}>Background Filter</h3>
+            <div style={{
+              display: 'flex',
+              gap: '10px',
+              justifyContent: 'center',
+              flexWrap: 'wrap'
+            }}>
+              {filters.map(filter => (
+                <button
+                  key={filter.value}
+                  onClick={() => handleFilterChange(filter.value)}
+                  style={{
+                    padding: '12px 20px',
+                    backgroundColor: selectedFilter === filter.value ? '#007bff' : 'white',
+                    color: selectedFilter === filter.value ? 'white' : '#333',
+                    border: '2px solid #007bff',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '14px',
+                    fontWeight: selectedFilter === filter.value ? 'bold' : 'normal',
+                    transition: 'all 0.2s',
+                    minWidth: '140px'
+                  }}
+                >
+                  <div>{filter.label}</div>
+                  <div style={{
+                    fontSize: '11px',
+                    marginTop: '4px',
+                    opacity: 0.8
+                  }}>
+                    {filter.description}
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div style={{
+            maxWidth: '900px',
+            margin: '0 auto',
+            backgroundColor: '#000',
+            borderRadius: '8px',
+            overflow: 'hidden',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            position: 'relative',
+            width: '100%'
           }}>
             {filters.map(filter => (
-              <button
+              <video
                 key={filter.value}
-                onClick={() => handleFilterChange(filter.value)}
+                ref={el => videoRefs.current[filter.value] = el}
+                controls={selectedFilter === filter.value}
+                preload="auto"
+                muted={selectedFilter !== filter.value}
                 style={{
-                  padding: '12px 20px',
-                  backgroundColor: selectedFilter === filter.value ? '#007bff' : 'white',
-                  color: selectedFilter === filter.value ? 'white' : '#333',
-                  border: '2px solid #007bff',
-                  borderRadius: '6px',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: selectedFilter === filter.value ? 'bold' : 'normal',
-                  transition: 'all 0.2s',
-                  minWidth: '140px'
+                  width: '100%',
+                  display: selectedFilter === filter.value ? 'block' : 'none'
                 }}
-              >
-                <div>{filter.label}</div>
-                <div style={{
-                  fontSize: '11px',
-                  marginTop: '4px',
-                  opacity: 0.8
-                }}>
-                  {filter.description}
-                </div>
-              </button>
+                src={`http://127.0.0.1:8080/get-processed-video?video_url=${encodeURIComponent(videoUrl)}&filter=${filter.value}`}
+              />
             ))}
           </div>
-        </div>
 
-        <div style={{
-          maxWidth: '900px',
-          margin: '0 auto',
-          backgroundColor: '#000',
-          borderRadius: '8px',
-          overflow: 'hidden',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          position: 'relative'
-        }}>
-          {filters.map(filter => (
-            <video
-              key={filter.value}
-              ref={el => videoRefs.current[filter.value] = el}
-              controls={selectedFilter === filter.value}
-              preload="auto"
-              muted={selectedFilter !== filter.value}
-              style={{
-                width: '100%',
-                display: selectedFilter === filter.value ? 'block' : 'none'
-              }}
-              src={`http://127.0.0.1:8080/get-processed-video?video_url=${encodeURIComponent(videoUrl)}&filter=${filter.value}`}
-            />
-          ))}
-        </div>
-
-        <div style={{
-          marginTop: '20px',
-          padding: '15px',
-          backgroundColor: '#e8f5e9',
-          borderRadius: '8px',
-          fontSize: '14px'
-        }}>
-          <p style={{ margin: '5px 0' }}>
-            ✓ Pre-processed with 5 filter variations
-          </p>
-          <p style={{ margin: '5px 0' }}>
-            ✓ Switch filters instantly at any point in the video
-          </p>
-          <p style={{ margin: '5px 0' }}>
-            ✓ Full audio and video sync maintained
-          </p>
+          <div style={{
+            marginTop: '20px',
+            padding: '15px',
+            backgroundColor: '#e8f5e9',
+            borderRadius: '8px',
+            fontSize: '14px'
+          }}>
+            <p style={{ margin: '5px 0' }}>
+              ✓ Pre-processed with 5 filter variations
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              ✓ Switch filters instantly at any point in the video
+            </p>
+            <p style={{ margin: '5px 0' }}>
+              ✓ Full audio and video sync maintained
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

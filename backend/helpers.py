@@ -78,24 +78,25 @@ def apply_inverted_background(frame, segmentation_mask, threshold=0.5):
     return output_frame.astype(np.uint8)
 
 def apply_rio_background(frame, segmentation_mask, threshold=0.5):
-    """Apply Rio de Janeiro Instagram filter to background - blue-toned and desaturated."""
+    """Apply Rio de Janeiro Instagram filter to background - purple/pink nostalgic tone."""
     mask = np.squeeze(segmentation_mask)
     condition = mask > threshold
     
-    # Rio filter: cool blue-gray desaturated look
+    # Rio filter: purple/magenta nostalgic look
     rio_frame = frame.copy().astype(np.float32)
     
     # Calculate grayscale
     gray = 0.299 * rio_frame[:,:,2] + 0.587 * rio_frame[:,:,1] + 0.114 * rio_frame[:,:,0]
     
-    # Apply cool desaturated look with blue tones
-    rio_frame[:,:,0] = np.clip(gray * 0.7 + rio_frame[:,:,0] * 0.5, 0, 255)  # Blue (increased)
-    rio_frame[:,:,1] = np.clip(gray * 0.6 + rio_frame[:,:,1] * 0.4, 0, 255)  # Green (moderate)
-    rio_frame[:,:,2] = np.clip(gray * 0.5 + rio_frame[:,:,2] * 0.3, 0, 255)  # Red (reduced)
+    # Apply desaturated look with purple/pink tones
+    rio_frame[:,:,0] = np.clip(gray * 0.5 + rio_frame[:,:,0] * 0.6, 0, 255)  # Blue (moderate)
+    rio_frame[:,:,1] = np.clip(gray * 0.4 + rio_frame[:,:,1] * 0.5, 0, 255)  # Green (reduced)
+    rio_frame[:,:,2] = np.clip(gray * 0.6 + rio_frame[:,:,2] * 0.7, 0, 255)  # Red (increased)
     
-    # Add subtle blue tint
-    rio_frame[:,:,0] = np.clip(rio_frame[:,:,0] * 1.15, 0, 255)  # Boost blue
-    rio_frame[:,:,2] = np.clip(rio_frame[:,:,2] * 0.9, 0, 255)   # Reduce red
+    # Add purple/magenta tint
+    rio_frame[:,:,0] = np.clip(rio_frame[:,:,0] * 1.2, 0, 255)   # Boost blue for purple
+    rio_frame[:,:,2] = np.clip(rio_frame[:,:,2] * 1.15, 0, 255)  # Boost red for magenta
+    rio_frame[:,:,1] = np.clip(rio_frame[:,:,1] * 0.85, 0, 255)  # Reduce green
     
     condition_3d = np.stack((condition,) * 3, axis=-1)
     output_frame = np.where(condition_3d, frame, rio_frame)

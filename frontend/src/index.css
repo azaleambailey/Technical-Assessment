@@ -17,6 +17,29 @@ code {
   box-sizing: border-box;
 }
 
+/* Responsive banner adjustments */
+@media (max-width: 768px) {
+  .banner-header {
+    padding: 15px 15px 15px 20px !important;
+    margin: 15px 15px 15px 15px !important;
+  }
+  
+  .banner-header h1 {
+    font-size: 24px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .banner-header {
+    padding: 12px 12px 12px 15px !important;
+    margin: 10px 10px 10px 10px !important;
+  }
+  
+  .banner-header h1 {
+    font-size: 20px !important;
+  }
+}
+
 .container {
   max-width: 1200px;
   margin: 0 auto;
