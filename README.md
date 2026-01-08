@@ -213,12 +213,6 @@ curl -X POST -F "video=@/path/to/video.mp4" http://127.0.0.1:8080/upload-video
 
 ## How It Works
 
-### Technical Approach
-
-#### Why MediaPipe Selfie Segmentation?
-
-## How It Works
-
 ### Backend Processing
 
 The backend uses **MediaPipe** for AI-powered person segmentation and **FFmpeg** for video encoding:
@@ -253,215 +247,29 @@ The frontend uses **synchronized multi-video** approach for instant filter switc
 - Server-side caching benefits all users
 - Consistent results across browsers/devices
 - Offloads work from user's device
+- Experienced slight pause between switching filters
 
 ## Next Steps & Future Improvements
 
-### Performance
-- GPU acceleration for faster processing
-- Stream processing (chunks instead of full video)
-- Adaptive quality (lower res processing, upscale for display)
+### Performance Optimization
+- **Advanced Segmentation Models**: While MediaPipe provides excellent speed and accuracy for this use case, there are more sophisticated background/foreground segmentation systems available (e.g., DeepLabV3+, U-Net). The choice between these models should be driven by business requirements—prioritizing accuracy versus video processing time and user experience.
+- **Stream Processing**: Implement chunk-based video processing to enable real-time streaming and reduce memory footprint, rather than loading entire videos into memory.
+- **Scalable Caching Strategy**: The current file-based caching system works well for moderate traffic but would require architectural changes for production-scale deployment. At scale, this could be addressed through:
+  - Cloud-based object storage (S3, Google Cloud Storage) with CDN distribution
+  - Distributed caching layer (Redis, Memcached) for metadata
+  - Background job processing with queue system (Celery, RabbitMQ)
+  - Automatic cache eviction policies based on usage patterns and storage limits
+  - Horizontal scaling with load balancing across multiple processing nodes
 
-### Features
-- More filters (blur, edge detection, artistic effects)
-- Custom filter parameters
-- Video trimming and batch processing
-- Progress indicators for long videos
-
-### ML Enhancements
-- Face detection overlays
-- Pose estimation
-- Multi-person support
-- Background replacement (custom images/videos)
-
-### Infrastructure
-- Cloud deployment (AWS/GCP/Azure)
-- CDN for cached videos
-- User authentication and history
-- Rate limiting
-
-## For Developers
-
-### Adding a New Filter
-
-**1. Create filter function** in [backend/helpers.py](backend/helpers.py):
-```python
-def apply_custom_filter(frame, segmentation_mask, threshold=0.5):
-    mask = np.squeeze(segmentation_mask)
-    condition = mask > threshold
-    filtered_frame = your_filter_logic(frame)  # Your code here
-    condition_3d = np.stack((condition,) * 3, axis=-1)
-    return np.where(condition_3d, frame, filtered_frame).astype(np.uint8)
-```
-
-**2. Register it** in [backend/main.py](backend/main.py):
-```python
-FILTERS = {
-    'none': None,
-    'grayscale': apply_grayscale_background,
-    'custom': apply_custom_filter  # Add here
-}
-```
-
-**3. Add to frontend** in [frontend/src/App.tsx](frontend/src/App.tsx):
-```typescript
-type FilterType = 'none' | 'grayscale' | 'sepia' | 'rio' | 'custom';
-
-const filters = [
-  { value: 'custom', label: 'Custom', description: 'Your description' },
-  // ...
-];
-```
-
-### Debugging
-
-- **Backend logs**: Terminal running `python main.py`
-- **Frontend**: Browser DevTools console
-- **Cache issues**: Clear `backend/processed_cache/`
-- **Segmentation quality**: Adjust `threshold` in filter functions
-
-### API Reference
-
-**Health Check:**
-```bash
-curl http://127.0.0.1:8080/hello-world
-```
-
-**Process Video:**
-```bash
-curl "http://127.0.0.1:8080/get-processed-video?video_url=<URL>&filter=grayscale"
-```
-
-**Upload Video:**
-```bash
-curl -X POST -F "video=@video.mp4" http://127.0.0.1:8080/upload-video
-```
-
-## Contributing
-
-This project was created as a technical assessment. For production use, consider:
-- Adding comprehensive tests
-- Implementing proper error handling
-- Setting up CI/CD pipelines
-- Deploying to cloud infrastructure
-- Adding user authentication
-
-## License
-
-This project is for educational and assessment purposes.
-
-## Acknowledgments
-
-- **MediaPipe**: Google's excellent ML solutions
-- **FFmpeg**: The Swiss Army knife of video processing
-- **OpenCV**: Computer vision made accessible
-- **React**: Making UIs delightful
-
----
-
-**Built as a technical assessment demonstrating:**
-- Full-stack development (Python + React + TypeScript)
-- Machine learning integration (MediaPipe)
-- Video processing (OpenCV + FFmpeg)
-- Modern web development practices
-- System architecture and optimization
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install Python dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Start the backend server:
-   ```bash
-   cd backend
-   python main.py
-   ```
-
-The backend will run on `http://127.0.0.1:8080`
-
-### Frontend Setup
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
-
-2. Install Node.js dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the React development server:
-   ```bash
-   npm start
-   ```
-
-The frontend will run on `http://localhost:3000`
-
-## API Endpoints
-
-### Backend Routes
-- `GET /hello-world` - Test endpoint to verify backend connectivity
-- `GET /process-video?video_url=<url>` - Process video with MediaPipe segmentation and grayscale background filter
-
-## Usage
-
-1. Start both the backend and frontend servers
-2. Open your browser to `http://localhost:3000`
-3. The original video will be displayed on the left
-4. Click "Start Processing" to begin the MediaPipe segmentation
-5. The processed video (with grayscale background) will appear on the right
-6. Click "Stop Processing" to end the stream
-
-## How It Works
-
-### MediaPipe Selfie Segmentation
-The system uses MediaPipe's Selfie Segmentation model to:
-1. Analyze each video frame
-2. Generate a segmentation mask identifying the person vs. background
-3. Apply the grayscale filter only to background pixels
-4. Stream the processed frames back to the frontend in real-time
-
-### Technical Implementation
-- **Backend**: Streams video frames using multipart/x-mixed-replace
-- **Frontend**: Displays the stream using an img element
-- **Processing**: Each frame is processed in real-time with MediaPipe
-- **Performance**: Model selection=1 for better accuracy (can use 0 for faster processing)
-
-## Development Notes
-
-### For Assessment Takers
-- The grayscale background filter is now implemented
-- Next steps: Add face detection overlay, statistics, and other effects
-- Backend: Processing logic is in `backend/helpers.py` and `backend/main.py`
-- Frontend: UI controls are in `frontend/src/App.tsx`
-- The video URL is configured in `frontend/src/consts.ts`
-
-### Project Configuration
-- Video source is configured in `frontend/src/consts.ts`
-- Backend port is set to 8080 by default
-- Frontend development server runs on port 3000
-- MediaPipe segmentation threshold: 0.5 (adjustable in `helpers.py`)
-
-## Technologies Used
-
-- **Backend**: Python, Flask, MediaPipe, OpenCV, NumPy
-- **Frontend**: React, TypeScript, HTML5
-- **Computer Vision**: MediaPipe Selfie Segmentation
-- **Styling**: CSS3 with modern responsive design
-- **Development**: Hot reload for both frontend and backend
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Implement your changes
-4. Test both backend and frontend
-5. Submit a pull request
-
-## License
-
-This project is designed for technical assessment purposes.
-
-You may use any tool you wish but you are responsible for understanding all parts of the implementation.
+### User Experience Enhancements
+- **Enhanced Filter Controls**: Add user-configurable parameters for existing filters (intensity, saturation, contrast adjustments)
+- **Progress Indicators**: Implement detailed loading screens with progress bars showing:
+  - Video download/upload status
+  - Frame processing completion percentage
+  - Estimated time remaining
+- **Expanded Filter Library**: Add additional visual effects including:
+  - Gaussian and motion blur
+  - Edge detection and artistic effects
+  - Custom color grading presets
+  - Background replacement with static images or videos
+- **Playback Controls**: Add frame-by-frame navigation, playback speed adjustment, and video trimming capabilities
