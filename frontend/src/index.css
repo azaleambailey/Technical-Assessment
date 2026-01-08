@@ -17,8 +17,19 @@ code {
   box-sizing: border-box;
 }
 
-/* Responsive banner adjustments */
-@media (max-width: 768px) {
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive adjustments for tablets and mobile */
+@media (max-width: 1024px) {
   .banner-header {
     padding: 15px 15px 15px 20px !important;
     margin: 15px 15px 15px 15px !important;
@@ -26,6 +37,42 @@ code {
   
   .banner-header h1 {
     font-size: 24px !important;
+  }
+
+  /* Change layout to column for small screens - buttons naturally below video */
+  .main-content-wrapper {
+    margin-left: 0 !important;
+    transition: none !important;
+  }
+
+  .video-filter-container {
+    flex-direction: column !important;
+    transition: none !important;
+  }
+
+  .filter-buttons-container {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .video-wrapper {
+    max-width: 100% !important;
+    transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 1.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  .filter-buttons-wrapper {
+    flex-direction: row !important;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .filter-buttons-wrapper button {
+    flex: 1 1 auto;
+    min-width: 140px;
+  }
+
+  .filter-title {
+    text-align: center;
   }
 }
 
@@ -37,6 +84,11 @@ code {
   
   .banner-header h1 {
     font-size: 20px !important;
+  }
+
+  .filter-buttons-wrapper button {
+    min-width: 120px;
+    font-size: 12px !important;
   }
 }
 
