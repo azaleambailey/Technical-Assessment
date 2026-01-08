@@ -36,6 +36,9 @@ Create a system that distinguishes between a person (foreground) and the backgro
 
 ```
 Technical-Assessment/
+├── assets/                     # Documentation and media files
+│   └── webapp.jpeg            # Screenshot for README
+│
 ├── backend/                    # Python Flask server
 │   ├── main.py                # API endpoints and video processing
 │   ├── helpers.py             # Filter functions and utilities
