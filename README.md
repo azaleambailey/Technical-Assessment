@@ -2,13 +2,13 @@
 
 A full-stack web application that applies visual filters to video backgrounds while keeping people in full color. Built as a technical assessment demonstrating person segmentation, real-time video processing, and modern web development practices.
 
-## 🎯 Project Objective
+## Project Objective
 
 Create a system that distinguishes between a person (foreground) and the background in a video, applying different visual effects to each region:
 - **Background**: Apply video effects (black & white, sepia, Instagram-style filters, etc.)
 - **Speaker/Person**: Keep in full color, unaffected by filters
 
-## ✨ Features
+## Features
 
 ### Core Functionality
 1. **Person Detection**: Uses MediaPipe's selfie segmentation model to identify people in video frames
@@ -28,7 +28,7 @@ Create a system that distinguishes between a person (foreground) and the backgro
 - **Synchronized Playback**: All filter variations stay perfectly in sync
 - **Responsive Design**: Clean, modern interface with smooth animations
 
-## 🏗️ Architecture
+## Architecture
 
 ### Project Structure
 
@@ -67,7 +67,7 @@ Technical-Assessment/
 - **TypeScript**: Type-safe JavaScript
 - **CSS-in-JS**: Inline styles for component encapsulation
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
 
@@ -107,7 +107,7 @@ cd backend
 python main.py
 ```
 
-✅ **Backend is ready!** You should see: `Running on http://127.0.0.1:8080`
+**Backend is ready!** You should see: `Running on http://127.0.0.1:8080`
 
 #### 2. Frontend Setup
 
@@ -124,17 +124,17 @@ npm install
 npm start
 ```
 
-✅ **Frontend is ready!** Browser will automatically open at `http://localhost:3000`
+**Frontend is ready!** Browser will automatically open at `http://localhost:3000`
 
 ### First Usage
 
 1. **Default Video Loads**: The app automatically loads a demo video
 2. **Try Filters**: 
-   - Click the **filter icon** 🎨 on the left sidebar
+   - Click the **filter icon** on the left sidebar
    - Select any filter (Grayscale, Sepia, Rio)
    - Watch the background change instantly!
 3. **Upload Your Own**:
-   - Click the **upload icon** 📤 on the left sidebar
+   - Click the **upload icon** on the left sidebar
    - Choose "Paste URL" for YouTube videos
    - Or "Upload File" for local video files (max 100MB)
 4. **Enjoy**: Switch between filters in real-time with synchronized playback
@@ -159,7 +159,7 @@ npm start
 - Ensure backend is running on port 8080
 - Check that CORS is enabled in Flask (already configured)
 
-## 🎓 How to Use
+## How to Use
 
 ### Basic Workflow
 
@@ -220,7 +220,7 @@ Parameters:
 curl -X POST -F "video=@/path/to/video.mp4" http://127.0.0.1:8080/upload-video
 ```
 
-## 💡 How It Works
+## How It Works
 
 ### Technical Approach
 
@@ -283,7 +283,7 @@ We chose MediaPipe's selfie segmentation model because:
 - Offloads processing from user's device
 - Consistent results across all browsers/devices
 
-## 🎨 Filter Implementation Details
+## Filter Implementation Details
 
 ### Grayscale Filter
 - Converts background to black and white using OpenCV's `cvtColor`
@@ -300,7 +300,7 @@ We chose MediaPipe's selfie segmentation model because:
 - Combines desaturation with color channel shifts
 - Boosts blue and red channels while reducing green
 
-## 📁 Code Structure Explained
+## Code Structure Explained
 
 ### Backend ([backend/main.py](backend/main.py))
 
@@ -370,7 +370,7 @@ We chose MediaPipe's selfie segmentation model because:
 - `handleUrlSubmit()`: Load YouTube video
 - `handleFileUpload()`: Upload video file to backend
 
-## 🔄 Data Flow
+## Data Flow
 
 ```
 User Action (Select Filter)
@@ -404,7 +404,7 @@ Check if video element exists
                 Return requested filter
 ```
 
-## 🎯 Design Decisions
+## Design Decisions
 
 ### 1. Batch Processing All Filters
 **Decision**: Process all filter variations in a single pass
@@ -446,7 +446,7 @@ Check if video element exists
 - Handles audio merging elegantly
 - Universal browser compatibility
 
-## 🔮 Next Steps & Future Improvements
+## Next Steps & Future Improvements
 
 ### Performance Enhancements
 - [ ] **GPU Acceleration**: Use CUDA/TensorFlow GPU for faster processing
@@ -489,7 +489,7 @@ Check if video element exists
 - [ ] **Logging**: Structured logging for debugging
 - [ ] **Monitoring**: Track performance metrics
 
-## 📝 Development Notes
+## Development Notes
 
 ### Adding a New Filter
 
@@ -541,7 +541,7 @@ type FilterType = 'none' | 'grayscale' | 'sepia' | 'rio' | 'custom';
 - **Segmentation quality**: Adjust `threshold` parameter in filter functions
 - **Cache issues**: Delete contents of `backend/processed_cache/`
 
-## 🤝 Contributing
+## Contributing
 
 This project was created as a technical assessment. For production use, consider:
 - Adding comprehensive tests
@@ -550,11 +550,11 @@ This project was created as a technical assessment. For production use, consider
 - Deploying to cloud infrastructure
 - Adding user authentication
 
-## 📄 License
+## License
 
 This project is for educational and assessment purposes.
 
-## 👏 Acknowledgments
+## Acknowledgments
 
 - **MediaPipe**: Google's excellent ML solutions
 - **FFmpeg**: The Swiss Army knife of video processing
@@ -563,7 +563,7 @@ This project is for educational and assessment purposes.
 
 ---
 
-**Built with ❤️ as a technical assessment demonstrating:**
+**Built as a technical assessment demonstrating:**
 - Full-stack development (Python + React + TypeScript)
 - Machine learning integration (MediaPipe)
 - Video processing (OpenCV + FFmpeg)
