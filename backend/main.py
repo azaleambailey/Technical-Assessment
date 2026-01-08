@@ -26,7 +26,7 @@ FILTERS = {
     'none': None,
     'grayscale': apply_grayscale_background,
     'sepia': apply_sepia_background,
-    'inverted': apply_inverted_background,
+    'hot_pink': apply_hot_pink_background,
     'rio': apply_rio_background
 }
 

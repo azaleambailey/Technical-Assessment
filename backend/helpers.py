@@ -65,15 +65,19 @@ def apply_sepia_background(frame, segmentation_mask, threshold=0.5):
     
     return output_frame.astype(np.uint8)
 
-def apply_inverted_background(frame, segmentation_mask, threshold=0.5):
-    """Apply inverted colors to background."""
+def apply_hot_pink_background(frame, segmentation_mask, threshold=0.5):
+    """Apply hot pink overlay to background."""
     mask = np.squeeze(segmentation_mask)
     condition = mask > threshold
     
-    inverted_frame = 255 - frame
+    # Hot pink color in BGR format (255, 105, 180) -> (180, 105, 255)
+    hot_pink_frame = frame.copy().astype(np.float32)
+    hot_pink_frame[:,:,0] = np.clip(frame[:,:,0] * 0.4 + 180, 0, 255)  # Blue channel
+    hot_pink_frame[:,:,1] = np.clip(frame[:,:,1] * 0.4 + 105, 0, 255)  # Green channel  
+    hot_pink_frame[:,:,2] = np.clip(frame[:,:,2] * 0.4 + 255, 0, 255)  # Red channel
     
     condition_3d = np.stack((condition,) * 3, axis=-1)
-    output_frame = np.where(condition_3d, frame, inverted_frame)
+    output_frame = np.where(condition_3d, frame, hot_pink_frame)
     
     return output_frame.astype(np.uint8)
 

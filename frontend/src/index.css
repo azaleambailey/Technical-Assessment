@@ -42,7 +42,37 @@ code {
   /* Change layout to column for small screens - buttons naturally below video */
   .main-content-wrapper {
     margin-left: 0 !important;
+    padding: 0 !important;
     transition: none !important;
+  }
+
+  .inner-content {
+    padding: 0 !important;
+  }
+
+  .video-filter-container {
+    gap: 10px !important;
+  }
+
+  /* Move floating toolbar to bottom on smaller screens */
+  .floating-toolbar {
+    position: fixed !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    top: auto !important;
+    bottom: 20px !important;
+    flex-direction: row !important;
+    gap: 15px !important;
+  }
+
+  .floating-toolbar button {
+    width: 60px !important;
+    height: 60px !important;
+  }
+
+  .floating-toolbar button svg {
+    width: 28px !important;
+    height: 28px !important;
   }
 
   .video-filter-container {
@@ -89,6 +119,18 @@ code {
   .filter-buttons-wrapper button {
     min-width: 120px;
     font-size: 12px !important;
+  }
+
+  .main-content-wrapper {
+    padding: 0 !important;
+  }
+
+  .inner-content {
+    padding: 0 !important;
+  }
+
+  .video-filter-container {
+    gap: 10px !important;
   }
 }
 

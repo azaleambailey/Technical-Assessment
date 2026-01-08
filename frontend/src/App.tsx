@@ -1,19 +1,20 @@
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { videoUrl } from './consts';
 
-type FilterType = 'none' | 'grayscale' | 'sepia' | 'inverted' | 'rio';
+type FilterType = 'none' | 'grayscale' | 'sepia' | 'hot_pink' | 'rio';
 
 const App: React.FC = () => {
   const [selectedFilter, setSelectedFilter] = useState<FilterType>('none');
   const videoRefs = useRef<{ [key: string]: HTMLVideoElement | null }>({});
   const [isFilterMenuOpen, setIsFilterMenuOpen] = useState(false);
+  const [hoveredButton, setHoveredButton] = useState<string | null>(null);
 
   const filters = useMemo(() => [
     { value: 'none' as FilterType, label: 'No Filter', description: 'Original background' },
     { value: 'grayscale' as FilterType, label: 'Grayscale', description: 'Black & white background' },
     { value: 'sepia' as FilterType, label: 'Sepia', description: 'Vintage brown tone' },
-    { value: 'inverted' as FilterType, label: 'Inverted', description: 'Negative colors' },
-    { value: 'rio' as FilterType, label: 'Rio de Janeiro', description: 'Cool blue-gray tone' },
+    { value: 'hot_pink' as FilterType, label: 'Hot Pink', description: 'Vibrant pink overlay' },
+    { value: 'rio' as FilterType, label: 'Rio de Janeiro', description: 'Instagram filter' },
   ], []);
 
   // Start all videos playing together on mount
@@ -117,7 +118,7 @@ const App: React.FC = () => {
       </div>
 
       {/* Floating Toolbar with 3 Icons */}
-      <div style={{
+      <div className="floating-toolbar" style={{
         position: 'fixed',
         left: '40px',
         top: '150px',
@@ -126,120 +127,163 @@ const App: React.FC = () => {
         flexDirection: 'column',
         gap: '20px'
       }}>
+        {/* Filter Icon */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
+            onMouseEnter={() => setHoveredButton('filter')}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={{
+              backgroundColor: 'white',
+              color: isFilterMenuOpen ? 'rgba(255, 61, 0, 1)' : '#E74C3C',
+              border: 'none',
+              borderRadius: '16px',
+              padding: '20px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '5px',
+              boxShadow: isFilterMenuOpen ? '0 6px 16px rgba(255, 61, 0, 0.3)' : '0 4px 12px rgba(0,0,0,0.15)',
+              transition: 'all 0.3s ease',
+              width: '70px',
+              height: '70px',
+              transform: isFilterMenuOpen || hoveredButton === 'filter' ? 'scale(1.1)' : 'scale(1)'
+            }}
+          >
+            <svg width="36" height="36" viewBox="0 0 512 512" fill={isFilterMenuOpen ? 'rgba(255, 61, 0, 1)' : '#E74C3C'}>
+              <path d="M3.9 54.9C10.5 40.9 24.5 32 40 32H472c15.5 0 29.5 8.9 36.1 22.9s4.6 30.5-5.2 42.5L320 320.9V448c0 12.1-6.8 23.2-17.7 28.6s-23.8 4.3-33.5-3l-64-48c-8.1-6-12.8-15.5-12.8-25.6V320.9L9 97.3C-.7 85.4-2.8 68.8 3.9 54.9z"/>
+            </svg>
+          </button>
+          {hoveredButton === 'filter' && (
+            <div style={{
+              position: 'absolute',
+              left: '85px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap',
+              fontSize: '14px',
+              fontWeight: 500,
+              pointerEvents: 'none',
+              zIndex: 1000
+            }}>
+              Choose your filter
+            </div>
+          )}
+        </div>
+
         {/* Upload Icon */}
-        <button
-          style={{
-            backgroundColor: 'white',
-            color: '#4A90E2',
-            border: 'none',
-            borderRadius: '16px',
-            padding: '20px',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '5px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            transition: 'all 0.3s ease',
-            width: '70px',
-            height: '70px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(74, 144, 226, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-          }}
-        >
-          <svg width="36" height="36" viewBox="0 0 512 512" fill="#4A90E2">
-            <path d="M403.002,217.001C388.998,148.002,328.998,96,256,96c-57.998,0-107.998,32.998-132.998,81.001C63.002,183.002,16,233.998,16,296c0,65.996,53.999,120,120,120h260c55,0,100-45,100-100C496,263.002,455.004,219.000,403.002,217.001z M288,276v76h-64v-76h-68l100-100l100,100H288z"/>
-          </svg>
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button
+            onMouseEnter={() => setHoveredButton('upload')}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={{
+              backgroundColor: 'white',
+              color: '#4A90E2',
+              border: 'none',
+              borderRadius: '16px',
+              padding: '20px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '5px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              transition: 'all 0.3s ease',
+              width: '70px',
+              height: '70px',
+              transform: hoveredButton === 'upload' ? 'scale(1.1)' : 'scale(1)'
+            }}
+          >
+            <svg width="36" height="36" viewBox="0 0 512 512" fill="#4A90E2">
+              <path d="M403.002,217.001C388.998,148.002,328.998,96,256,96c-57.998,0-107.998,32.998-132.998,81.001C63.002,183.002,16,233.998,16,296c0,65.996,53.999,120,120,120h260c55,0,100-45,100-100C496,263.002,455.004,219.000,403.002,217.001z M288,276v76h-64v-76h-68l100-100l100,100H288z"/>
+            </svg>
+          </button>
+          {hoveredButton === 'upload' && (
+            <div style={{
+              position: 'absolute',
+              left: '85px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap',
+              fontSize: '14px',
+              fontWeight: 500,
+              pointerEvents: 'none',
+              zIndex: 1000
+            }}>
+              Upload a video
+            </div>
+          )}
+        </div>
 
         {/* Scissors Icon */}
-        <button
-          style={{
-            backgroundColor: 'white',
-            color: '#9B59B6',
-            border: 'none',
-            borderRadius: '16px',
-            padding: '20px',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '5px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            transition: 'all 0.3s ease',
-            width: '70px',
-            height: '70px'
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = 'scale(1.1)';
-            e.currentTarget.style.boxShadow = '0 6px 16px rgba(155, 89, 182, 0.3)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = 'scale(1)';
-            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-          }}
-        >
-          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9B59B6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="6" cy="6" r="3"/>
-            <circle cx="6" cy="18" r="3"/>
-            <line x1="20" y1="4" x2="8.12" y2="15.88"/>
-            <line x1="14.47" y1="14.48" x2="20" y2="20"/>
-            <line x1="8.12" y1="8.12" x2="12" y2="12"/>
-          </svg>
-        </button>
-
-        {/* Filter Icon */}
-        <button
-          onClick={() => setIsFilterMenuOpen(!isFilterMenuOpen)}
-          style={{
-            backgroundColor: 'white',
-            color: isFilterMenuOpen ? 'rgba(255, 61, 0, 1)' : '#E74C3C',
-            border: 'none',
-            borderRadius: '16px',
-            padding: '20px',
-            cursor: 'pointer',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '5px',
-            boxShadow: isFilterMenuOpen ? '0 6px 16px rgba(255, 61, 0, 0.3)' : '0 4px 12px rgba(0,0,0,0.15)',
-            transition: 'all 0.3s ease',
-            width: '70px',
-            height: '70px',
-            transform: isFilterMenuOpen ? 'scale(1.1)' : 'scale(1)'
-          }}
-          onMouseEnter={(e) => {
-            if (!isFilterMenuOpen) {
-              e.currentTarget.style.transform = 'scale(1.1)';
-              e.currentTarget.style.boxShadow = '0 6px 16px rgba(231, 76, 60, 0.3)';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!isFilterMenuOpen) {
-              e.currentTarget.style.transform = 'scale(1)';
-              e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            }
-          }}
-        >
-          <svg width="36" height="36" viewBox="0 0 512 512" fill={isFilterMenuOpen ? 'rgba(255, 61, 0, 1)' : '#E74C3C'}>
-            <path d="M3.9 54.9C10.5 40.9 24.5 32 40 32H472c15.5 0 29.5 8.9 36.1 22.9s4.6 30.5-5.2 42.5L320 320.9V448c0 12.1-6.8 23.2-17.7 28.6s-23.8 4.3-33.5-3l-64-48c-8.1-6-12.8-15.5-12.8-25.6V320.9L9 97.3C-.7 85.4-2.8 68.8 3.9 54.9z"/>
-          </svg>
-        </button>
+        <div style={{ position: 'relative' }}>
+          <button
+            onMouseEnter={() => setHoveredButton('scissors')}
+            onMouseLeave={() => setHoveredButton(null)}
+            style={{
+              backgroundColor: 'white',
+              color: '#9B59B6',
+              border: 'none',
+              borderRadius: '16px',
+              padding: '20px',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '5px',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              transition: 'all 0.3s ease',
+              width: '70px',
+              height: '70px',
+              transform: hoveredButton === 'scissors' ? 'scale(1.1)' : 'scale(1)'
+            }}
+          >
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9B59B6" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="6" cy="6" r="3"/>
+              <circle cx="6" cy="18" r="3"/>
+              <line x1="20" y1="4" x2="8.12" y2="15.88"/>
+              <line x1="14.47" y1="14.48" x2="20" y2="20"/>
+              <line x1="8.12" y1="8.12" x2="12" y2="12"/>
+            </svg>
+          </button>
+          {hoveredButton === 'scissors' && (
+            <div style={{
+              position: 'absolute',
+              left: '85px',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.85)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              whiteSpace: 'nowrap',
+              fontSize: '14px',
+              fontWeight: 500,
+              pointerEvents: 'none',
+              zIndex: 1000
+            }}>
+              Editing Sandbox
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Filter Buttons - Appear on left side when filter icon is clicked */}
       
-      <div className="main-content-wrapper" style={{ padding: '0 20px', marginLeft: '130px', transition: 'margin 0.4s ease' }}>
-        <div style={{ textAlign: 'center', padding: '20px 0' }}>
+      <div className="main-content-wrapper" style={{ marginLeft: '130px', transition: 'margin 0.4s ease' }}>
+        <div className="inner-content" style={{ textAlign: 'center' }}>
           {/* Video and Filter Buttons Container */}
           <div className="video-filter-container" style={{
             display: 'flex',
@@ -314,16 +358,16 @@ const App: React.FC = () => {
 
             {/* Video Container */}
             <div className="video-wrapper" style={{
-              flex: '1 1 600px',
               maxWidth: isFilterMenuOpen ? '1100px' : '1400px',
               minWidth: '300px',
-              backgroundColor: '#000',
               borderRadius: '8px',
               overflow: 'hidden',
               boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
               position: 'relative',
               order: 1,
-              transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)'
+              transition: 'all 1.2s cubic-bezier(0.4, 0, 0.2, 1)',
+              display: 'flex',
+              alignItems: 'flex-start'
             }}>
               {filters.map(filter => (
                 <video
