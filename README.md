@@ -152,12 +152,12 @@ npm start
 ### Basic Workflow
 
 1. **Start Both Servers** (backend on :8080, frontend on :3000)
-2. **View Default Video**: The app automatically loads a demo video
-3. **Try Different Filters**: 
+2. **Watch Processing** (first time only - takes ~30 seconds per minute of video)
+3. **View Default Video**: The app automatically loads a demo video
+4. **Try Different Filters**: 
    - Click the **filter icon** on the left sidebar to open the filter menu
    - Select any filter (None, Grayscale, Sepia, Rio de Janeiro)
    - Watch the background change instantly!
-4. **Watch Processing** (first time only - takes ~30 seconds per minute of video)
 5. **Switch Filters** instantly after initial processing - all variations stay perfectly synchronized
 
 ### Uploading Videos
@@ -217,320 +217,124 @@ curl -X POST -F "video=@/path/to/video.mp4" http://127.0.0.1:8080/upload-video
 
 #### Why MediaPipe Selfie Segmentation?
 
-We chose MediaPipe's selfie segmentation model because:
-1. **Lightweight**: Runs efficiently on CPU without GPU requirements
-2. **Accurate**: Pre-trained on millions of images for robust person detection
-3. **Fast**: Real-time performance suitable for video processing
-4. **Free**: Open-source with permissive licensing
+## How It Works
 
-#### Processing Pipeline
+### Backend Processing
 
-1. **Video Download**
-   - Accepts YouTube URLs (via yt-dlp) or direct video links
-   - Saves to temporary location for processing
+The backend uses **MediaPipe** for AI-powered person segmentation and **FFmpeg** for video encoding:
 
-2. **Audio Extraction**
-   - Uses FFmpeg to extract audio track separately
-   - Preserves audio for final output
+**Why MediaPipe?**
+- Runs on CPU (no expensive GPU needed)
+- Pre-trained and accurate
+- Fast enough for real-time processing
 
-3. **Frame-by-Frame Processing**
-   - Opens video with OpenCV
-   - For each frame:
-     - Convert BGR → RGB for MediaPipe
-     - Run segmentation to get person mask
-     - Apply all filters simultaneously (efficient batch processing)
-     - Write to separate output files
+**Processing Flow:**
+1. Download video (YouTube via yt-dlp, or direct URL)
+2. Extract audio track with FFmpeg
+3. Process each frame: MediaPipe detects person, applies filters to background only
+4. **Batch efficiency**: Apply all 4 filters at once (4x faster than processing separately)
+5. Encode with H.264, merge audio back
+6. Cache all versions using MD5 hash of video URL
 
-4. **Video Encoding**
-   - Re-encode with H.264 codec (universal browser support)
-   - Merge audio back into video
-   - Save to cache directory
+**Key Design Choice:**
+Processing all filters simultaneously saves time because reading frames and running AI are the slow parts—applying color filters is fast. This means first-time processing generates all filter variations at once, then serving any filter is instant.
 
-5. **Caching Strategy**
-   - Uses MD5 hash of video URL as cache key
-   - Stores all filter variations: `{hash}_none.mp4`, `{hash}_grayscale.mp4`, etc.
-   - On first request: process all filters at once
-   - Subsequent requests: serve from cache instantly
+### Frontend Architecture
 
-#### Why Process All Filters at Once?
+The frontend uses **synchronized multi-video** approach for instant filter switching:
 
-**Performance Optimization**: Processing all filters simultaneously is ~4x faster than processing each separately because:
-- Reading video frames is the most expensive operation
-- MediaPipe segmentation is the second most expensive
-- Applying color filters is relatively cheap
-- By processing frames once and applying all filters, we minimize I/O and ML inference
+**How it Works:**
+- Loads all 4 filter variations as separate `<video>` elements
+- All videos play in perfect sync (same timestamp, play/pause state)
+- Only the selected filter is visible (`display: none` on others)
+- Switching filters = instant (just toggle visibility)
 
-#### Frontend Architecture
-
-**Synchronized Multi-Video Approach**: The frontend loads all filter variations as separate `<video>` elements:
-- All videos load simultaneously in the background
-- All videos play in perfect sync
-- Only the selected filter is visible (others are `display: none`)
-- Switching filters is instant - just toggle visibility
-
-**Why Not Process Client-Side?**: While WebGL/Canvas could apply filters client-side, server-side processing was chosen because:
-- MediaPipe's JavaScript implementation is less mature
-- Server can cache results for all users
-- Offloads processing from user's device
-- Consistent results across all browsers/devices
-
-## Filter Implementation Details
-
-### Grayscale Filter
-- Converts background to black and white using OpenCV's `cvtColor`
-- Standard luminance formula: `Y = 0.299R + 0.587G + 0.114B`
-- Person mask keeps RGB values unchanged
-
-### Sepia Filter
-- Applies warm brown-tone transformation matrix
-- Creates vintage photograph appearance
-- Matrix coefficients chosen for aesthetic appeal
-
-### Rio de Janeiro Filter
-- Instagram-style purple/magenta nostalgic tone
-- Combines desaturation with color channel shifts
-- Boosts blue and red channels while reducing green
-
-## Code Structure Explained
-
-### Backend ([backend/main.py](backend/main.py))
-
-#### Key Endpoints
-
-**`GET /hello-world`**: Health check endpoint
-
-**`POST /upload-video`**: Handle video file uploads
-- Validates file type and size
-- Saves with UUID filename to prevent conflicts
-- Returns URL for accessing uploaded video
-
-**`GET /uploaded-videos/<filename>`**: Serve uploaded videos
-
-**`GET /get-processed-video`**: Main processing endpoint
-- Parameters: `video_url` (required), `filter` (optional)
-- Checks cache for existing processed version
-- If not cached, triggers `process_all_filters()`
-- Returns processed video as MP4 stream
-
-#### Key Functions
-
-**`download_video()`**: Downloads video from YouTube or direct URL
-- Auto-detects YouTube URLs
-- Uses yt-dlp for YouTube (handles auth, format selection, audio merging)
-- Uses requests for direct URLs
-
-**`process_all_filters()`**: Main video processing pipeline
-- Downloads video
-- Extracts audio with FFmpeg
-- Initializes MediaPipe segmentation model
-- Processes all frames with all filters simultaneously
-- Re-encodes with H.264
-- Merges audio back
-- Caches all versions
-
-### Backend ([backend/helpers.py](backend/helpers.py))
-
-**`get_temp_path()`**: Generates unique temporary file paths
-
-**`apply_grayscale_background()`**: Implements grayscale filter
-- Uses segmentation mask to composite color person with B&W background
-
-**`apply_sepia_background()`**: Implements sepia filter
-- Applies sepia transformation matrix
-
-**`apply_rio_background()`**: Implements Rio de Janeiro filter
-- Complex color grading for Instagram-style effect
-
-### Frontend ([frontend/src/App.tsx](frontend/src/App.tsx))
-
-#### State Management
-- `selectedFilter`: Currently active filter
-- `videoRefs`: References to all video elements
-- `videoUrl`: Current video source URL
-- UI state: modals, tooltips, upload status
-
-#### Key Effects
-
-**Auto-play Effect**: Starts all videos playing on mount
-**Sync Effect**: Keeps all videos synchronized to active video
-- Listens to `timeupdate`, `play`, `pause`, `seeked` events
-- Syncs timestamp and play state across all video elements
-
-#### Event Handlers
-- `handleFilterChange()`: Switch visible filter
-- `handleUrlSubmit()`: Load YouTube video
-- `handleFileUpload()`: Upload video file to backend
-
-## Data Flow
-
-```
-User Action (Select Filter)
-    ↓
-Frontend (App.tsx)
-    ↓
-Check if video element exists
-    ↓
-    ├─ YES → Show cached video (instant)
-    └─ NO  → Request: GET /get-processed-video?video_url=...&filter=grayscale
-                ↓
-            Backend (main.py)
-                ↓
-            Check cache directory
-                ↓
-                ├─ CACHED → Return file
-                └─ NOT CACHED →
-                    ↓
-                Download video
-                    ↓
-                Extract audio
-                    ↓
-                Process all frames with MediaPipe
-                    ↓
-                Apply all filters
-                    ↓
-                Encode with H.264 + merge audio
-                    ↓
-                Cache all versions
-                    ↓
-                Return requested filter
-```
-
-## Design Decisions
-
-### 1. Batch Processing All Filters
-**Decision**: Process all filter variations in a single pass
-**Rationale**: 
-- Video I/O is expensive
-- MediaPipe inference is expensive
-- Filter application is cheap
-- 4x performance improvement
-
-### 2. Server-Side Processing
-**Decision**: Process videos on the backend, not client-side
-**Rationale**:
-- Caching benefits all users
-- Consistent results across platforms
+**Why Not Client-Side Processing?**
+- Server-side caching benefits all users
+- Consistent results across browsers/devices
 - Offloads work from user's device
-- Better for mobile users
-
-### 3. Multi-Video Frontend Approach
-**Decision**: Load all filter variations as separate video elements
-**Rationale**:
-- Instant filter switching (just toggle visibility)
-- Smooth user experience
-- No client-side processing needed
-- Simple implementation
-
-### 4. MediaPipe Over Other Segmentation Methods
-**Decision**: Use MediaPipe selfie segmentation
-**Rationale**:
-- Pre-trained and highly accurate
-- CPU-friendly (no GPU required)
-- Well-maintained by Google
-- Easy integration with Python
-
-### 5. FFmpeg for Video Encoding
-**Decision**: Use FFmpeg for final encoding
-**Rationale**:
-- Industry standard
-- Excellent H.264 encoder (libx264)
-- Handles audio merging elegantly
-- Universal browser compatibility
 
 ## Next Steps & Future Improvements
 
-### Performance Enhancements
-- [ ] **GPU Acceleration**: Use CUDA/TensorFlow GPU for faster processing
-- [ ] **Adaptive Quality**: Process at lower resolution, upscale for display
-- [ ] **Streaming Processing**: Process and stream chunks instead of entire video
-- [ ] **Worker Processes**: Parallel processing of multiple videos
+### Performance
+- GPU acceleration for faster processing
+- Stream processing (chunks instead of full video)
+- Adaptive quality (lower res processing, upscale for display)
 
-### Feature Additions
-- [ ] **More Filters**: Blur, edge detection, color shifts, artistic effects
-- [ ] **Custom Filter Creator**: Let users adjust filter parameters
-- [ ] **Video Trimming**: Allow users to process only portions of video
-- [ ] **Batch Processing**: Upload multiple videos at once
-- [ ] **Export Options**: Different resolutions, formats, quality levels
+### Features
+- More filters (blur, edge detection, artistic effects)
+- Custom filter parameters
+- Video trimming and batch processing
+- Progress indicators for long videos
 
-### ML Improvements
-- [ ] **Face Detection Overlay**: Draw bounding boxes around detected faces
-- [ ] **Pose Estimation**: Detect and highlight body pose
-- [ ] **Multi-Person Support**: Handle multiple people in frame differently
-- [ ] **Background Replacement**: Replace background with custom image/video
-- [ ] **Fine-Tune Segmentation**: Adjust mask threshold based on video content
-
-### User Experience
-- [ ] **Progress Indicator**: Show processing progress for long videos
-- [ ] **Preview Mode**: Quick low-quality preview before full processing
-- [ ] **Shareable Links**: Generate links to processed videos
-- [ ] **History**: Save recently processed videos
-- [ ] **Mobile App**: Native iOS/Android versions
+### ML Enhancements
+- Face detection overlays
+- Pose estimation
+- Multi-person support
+- Background replacement (custom images/videos)
 
 ### Infrastructure
-- [ ] **Cloud Deployment**: Deploy to AWS/GCP/Azure
-- [ ] **CDN Integration**: Serve cached videos from CDN
-- [ ] **Database**: Track processed videos, user preferences
-- [ ] **Authentication**: User accounts and private videos
-- [ ] **Rate Limiting**: Prevent abuse of processing resources
+- Cloud deployment (AWS/GCP/Azure)
+- CDN for cached videos
+- User authentication and history
+- Rate limiting
 
-### Code Quality
-- [ ] **Unit Tests**: Test filter functions, API endpoints
-- [ ] **Integration Tests**: End-to-end testing
-- [ ] **Error Boundaries**: Better error handling in React
-- [ ] **Logging**: Structured logging for debugging
-- [ ] **Monitoring**: Track performance metrics
-
-## Development Notes
+## For Developers
 
 ### Adding a New Filter
 
-1. **Create filter function in [backend/helpers.py](backend/helpers.py)**:
+**1. Create filter function** in [backend/helpers.py](backend/helpers.py):
 ```python
 def apply_custom_filter(frame, segmentation_mask, threshold=0.5):
-    """Apply custom filter to background."""
     mask = np.squeeze(segmentation_mask)
     condition = mask > threshold
-    
-    # Your filter logic here
-    filtered_frame = apply_your_effect(frame)
-    
+    filtered_frame = your_filter_logic(frame)  # Your code here
     condition_3d = np.stack((condition,) * 3, axis=-1)
-    output_frame = np.where(condition_3d, frame, filtered_frame)
-    return output_frame.astype(np.uint8)
+    return np.where(condition_3d, frame, filtered_frame).astype(np.uint8)
 ```
 
-2. **Register filter in [backend/main.py](backend/main.py)**:
+**2. Register it** in [backend/main.py](backend/main.py):
 ```python
 FILTERS = {
     'none': None,
     'grayscale': apply_grayscale_background,
-    'sepia': apply_sepia_background,
-    'rio': apply_rio_background,
-    'custom': apply_custom_filter  # Add your filter
+    'custom': apply_custom_filter  # Add here
 }
 ```
 
-3. **Add filter option in [frontend/src/App.tsx](frontend/src/App.tsx)**:
-```typescript
-const filters = useMemo(() => [
-  { value: 'none' as FilterType, label: 'No Filter', description: 'Original background' },
-  // ... existing filters ...
-  { value: 'custom' as FilterType, label: 'Custom Filter', description: 'Your description' },
-], []);
-```
-
-4. **Update TypeScript types**:
+**3. Add to frontend** in [frontend/src/App.tsx](frontend/src/App.tsx):
 ```typescript
 type FilterType = 'none' | 'grayscale' | 'sepia' | 'rio' | 'custom';
+
+const filters = [
+  { value: 'custom', label: 'Custom', description: 'Your description' },
+  // ...
+];
 ```
 
-### Debugging Tips
+### Debugging
 
-- **Backend logs**: Check terminal running `python main.py`
-- **Frontend console**: Open browser DevTools
-- **Video loading issues**: Check CORS headers, video codec compatibility
-- **Segmentation quality**: Adjust `threshold` parameter in filter functions
-- **Cache issues**: Delete contents of `backend/processed_cache/`
+- **Backend logs**: Terminal running `python main.py`
+- **Frontend**: Browser DevTools console
+- **Cache issues**: Clear `backend/processed_cache/`
+- **Segmentation quality**: Adjust `threshold` in filter functions
+
+### API Reference
+
+**Health Check:**
+```bash
+curl http://127.0.0.1:8080/hello-world
+```
+
+**Process Video:**
+```bash
+curl "http://127.0.0.1:8080/get-processed-video?video_url=<URL>&filter=grayscale"
+```
+
+**Upload Video:**
+```bash
+curl -X POST -F "video=@video.mp4" http://127.0.0.1:8080/upload-video
+```
 
 ## Contributing
 
