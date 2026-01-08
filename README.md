@@ -256,7 +256,6 @@ The frontend uses **synchronized multi-video** approach for instant filter switc
 - **Stream Processing**: Implement chunk-based video processing to enable real-time streaming and reduce memory footprint, rather than loading entire videos into memory.
 - **Scalable Caching Strategy**: The current file-based caching system works well for moderate traffic but would require architectural changes for production-scale deployment. At scale, this could be addressed through:
   - Cloud-based object storage (S3, Google Cloud Storage) with CDN distribution
-  - Distributed caching layer (Redis, Memcached) for metadata
 
 ### User Experience Enhancements
 - **Enhanced Filter Controls**: Add user-configurable parameters for existing filters (intensity, saturation, contrast adjustments)
