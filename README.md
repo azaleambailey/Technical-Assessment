@@ -10,7 +10,7 @@ Create a system that distinguishes between a person (foreground) and the backgro
 
 ## Features
 
-![Background Video Filter Demo](frontend/webapp.jpeg)
+![Background Video Filter Demo](assets/webapp.jpeg)
 
 ### Core Functionality
 1. **Person Detection**: Uses MediaPipe's selfie segmentation model to identify people in video frames
