@@ -21,6 +21,15 @@ logger = logging.getLogger(__name__)
 CACHE_DIR = os.path.join(os.path.dirname(__file__), "processed_cache")
 os.makedirs(CACHE_DIR, exist_ok=True)
 
+# Available filters
+FILTERS = {
+    'none': None,
+    'grayscale': apply_grayscale_background,
+    'sepia': apply_sepia_background,
+    'inverted': apply_inverted_background,
+    'rio': apply_rio_background
+}
+
 @app.route("/hello-world", methods=["GET"])
 def hello_world():
     try:
@@ -32,32 +41,51 @@ def hello_world():
 @app.route("/get-processed-video", methods=["GET"])
 def get_processed_video():
     """
-    Returns the processed video with grayscale background.
-    Processes and caches it if not already done.
-    Expects 'video_url' as a query parameter.
+    Returns processed video with specified filter.
+    Processes and caches all filter variations if not already done.
     """
     try:
         video_url = request.args.get('video_url')
+        filter_type = request.args.get('filter', 'none')
+        
         if not video_url:
             return jsonify({"error": "video_url parameter is required"}), 400
         
+        if filter_type not in FILTERS:
+            return jsonify({"error": f"Invalid filter. Choose from: {list(FILTERS.keys())}"}), 400
+        
         # Generate cache key from video URL
         cache_key = hashlib.md5(video_url.encode()).hexdigest()
-        cached_video_path = os.path.join(CACHE_DIR, f"{cache_key}.mp4")
+        cached_video_path = os.path.join(CACHE_DIR, f"{cache_key}_{filter_type}.mp4")
         
-        # Check if already processed and cached
+        # Check if this specific filter version is cached
         if os.path.exists(cached_video_path):
-            logger.info(f"Serving cached processed video: {cache_key}")
-            return send_file(
-                cached_video_path,
-                mimetype='video/mp4',
-                as_attachment=False
-            )
+            logger.info(f"Serving cached video: {cache_key}_{filter_type}")
+            return send_file(cached_video_path, mimetype='video/mp4', as_attachment=False)
         
-        # Not cached - process the video
-        logger.info(f"Processing new video: {video_url}")
+        # Not cached - process all filter variations at once
+        logger.info(f"Processing all filter variations for: {video_url}")
+        process_all_filters(video_url, cache_key)
         
-        # Download video to temporary file
+        # Serve the requested filter
+        if os.path.exists(cached_video_path):
+            return send_file(cached_video_path, mimetype='video/mp4', as_attachment=False)
+        else:
+            return jsonify({"error": "Failed to process video"}), 500
+    
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+
+def process_all_filters(video_url, cache_key):
+    """Process video with all filters and save separate versions."""
+    temp_input_path = None
+    temp_audio_path = None
+    
+    try:
+        # Download video
         temp_input_path = get_temp_path() + ".mp4"
         logger.info("Downloading video...")
         response = requests.get(video_url, stream=True)
@@ -65,29 +93,24 @@ def get_processed_video():
             for chunk in response.iter_content(chunk_size=8192):
                 f.write(chunk)
         
-        # Extract audio from original video
+        # Extract audio
         temp_audio_path = get_temp_path() + "_audio.aac"
-        logger.info("Extracting audio track...")
+        logger.info("Extracting audio...")
         import subprocess
         try:
-            result = subprocess.run([
+            subprocess.run([
                 'ffmpeg', '-i', temp_input_path,
-                '-vn',  # No video
-                '-acodec', 'aac',  # Re-encode to AAC instead of copy
-                '-b:a', '128k',
-                '-y',
+                '-vn', '-acodec', 'aac', '-b:a', '128k', '-y',
                 temp_audio_path
             ], check=True, capture_output=True, text=True)
             has_audio = True
-            logger.info("Audio track extracted successfully")
-        except subprocess.CalledProcessError as e:
-            logger.warning(f"No audio track found in video: {e.stderr}")
+            logger.info("Audio extracted successfully")
+        except subprocess.CalledProcessError:
+            logger.warning("No audio track found")
             has_audio = False
         
         # Open video
         cap = cv2.VideoCapture(temp_input_path)
-        
-        # Get video properties
         fps = cap.get(cv2.CAP_PROP_FPS)
         frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -95,12 +118,7 @@ def get_processed_video():
         
         logger.info(f"Video: {frame_width}x{frame_height} @ {fps}fps, {total_frames} frames")
         
-        # Create output video writer (write to temp file first)
-        temp_output_path = get_temp_path() + "_output.mp4"
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter(temp_output_path, fourcc, fps, (frame_width, frame_height))
-        
-        # Download model if not exists
+        # Download MediaPipe model if needed
         model_path = os.path.join(os.path.dirname(__file__), "selfie_multiclass_256x256.tflite")
         if not os.path.exists(model_path):
             import urllib.request
@@ -108,40 +126,54 @@ def get_processed_video():
             logger.info("Downloading segmentation model...")
             urllib.request.urlretrieve(model_url, model_path)
         
-        # Initialize MediaPipe segmenter
+        # Initialize MediaPipe
         base_options = mp.tasks.BaseOptions(model_asset_path=model_path)
         options = mp.tasks.vision.ImageSegmenterOptions(
             base_options=base_options,
             output_category_mask=True)
         
-        frame_count = 0
+        # Create temporary output files for each filter
+        temp_outputs = {}
+        writers = {}
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
         
-        logger.info("Processing video frames...")
+        for filter_name in FILTERS.keys():
+            temp_path = get_temp_path() + f"_{filter_name}.mp4"
+            temp_outputs[filter_name] = temp_path
+            writers[filter_name] = cv2.VideoWriter(temp_path, fourcc, fps, (frame_width, frame_height))
+        
+        # Process all frames
+        frame_count = 0
+        logger.info("Processing frames with all filters...")
+        
         with mp.tasks.vision.ImageSegmenter.create_from_options(options) as segmenter:
             while cap.isOpened():
                 success, frame = cap.read()
                 if not success:
                     break
                 
-                # Convert BGR to RGB for MediaPipe
+                # Get segmentation mask
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                
-                # Create MediaPipe Image
                 mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb_frame)
-                
-                # Process frame with MediaPipe
                 segmentation_result = segmenter.segment(mp_image)
                 
-                # Get the segmentation mask and apply filter
                 if segmentation_result.category_mask is not None:
                     category_mask = segmentation_result.category_mask.numpy_view()
                     person_mask = (category_mask > 0).astype(np.float32)
-                    processed_frame = apply_grayscale_background(frame, person_mask, threshold=0.5)
+                    
+                    # Apply each filter and write to respective output
+                    for filter_name, filter_func in FILTERS.items():
+                        if filter_func is None:
+                            # No filter - use original frame
+                            processed_frame = frame
+                        else:
+                            processed_frame = filter_func(frame, person_mask, threshold=0.5)
+                        
+                        writers[filter_name].write(processed_frame)
                 else:
-                    processed_frame = frame
-                
-                # Write processed frame
-                out.write(processed_frame)
+                    # No mask - write original frame to all outputs
+                    for writer in writers.values():
+                        writer.write(frame)
                 
                 frame_count += 1
                 if frame_count % 50 == 0:
@@ -150,65 +182,51 @@ def get_processed_video():
         
         # Release resources
         cap.release()
-        out.release()
+        for writer in writers.values():
+            writer.release()
         
-        # Re-encode with H.264 for browser compatibility using ffmpeg
-        logger.info("Re-encoding video with H.264 codec for browser compatibility...")
-        import subprocess
+        logger.info("Re-encoding all filter variations with H.264...")
         
-        if has_audio:
-            # Merge processed video with original audio
-            logger.info("Merging processed video with audio track...")
-            result = subprocess.run([
-                'ffmpeg', '-i', temp_output_path,
-                '-i', temp_audio_path,
-                '-c:v', 'libx264',
-                '-preset', 'fast',
-                '-crf', '23',
-                '-pix_fmt', 'yuv420p',
-                '-c:a', 'aac',
-                '-b:a', '128k',
-                '-shortest',  # Match shortest stream
-                '-y',
-                cached_video_path
-            ], capture_output=True, text=True)
-            if result.returncode != 0:
-                logger.error(f"FFmpeg error: {result.stderr}")
-                raise Exception("Failed to merge audio")
-            logger.info("Audio merged successfully")
-        else:
-            # No audio, just re-encode video
-            logger.info("No audio track - encoding video only")
-            subprocess.run([
-                'ffmpeg', '-i', temp_output_path,
-                '-c:v', 'libx264',
-                '-preset', 'fast',
-                '-crf', '23',
-                '-pix_fmt', 'yuv420p',
-                '-y',
-                cached_video_path
-            ], check=True, capture_output=True)
+        # Re-encode each version with H.264 and audio
+        for filter_name, temp_path in temp_outputs.items():
+            final_path = os.path.join(CACHE_DIR, f"{cache_key}_{filter_name}.mp4")
+            
+            if has_audio:
+                subprocess.run([
+                    'ffmpeg', '-i', temp_path, '-i', temp_audio_path,
+                    '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                    '-pix_fmt', 'yuv420p', '-c:a', 'aac', '-b:a', '128k',
+                    '-shortest', '-y', final_path
+                ], check=True, capture_output=True)
+            else:
+                subprocess.run([
+                    'ffmpeg', '-i', temp_path,
+                    '-c:v', 'libx264', '-preset', 'fast', '-crf', '23',
+                    '-pix_fmt', 'yuv420p', '-y', final_path
+                ], check=True, capture_output=True)
+            
+            # Clean up temp file
+            if os.path.exists(temp_path):
+                os.remove(temp_path)
+            
+            logger.info(f"Completed: {filter_name}")
         
-        logger.info("Video processing completed and cached!")
+        logger.info("All filter variations processed and cached!")
         
-        # Clean up temporary files
-        if os.path.exists(temp_input_path):
+        # Clean up
+        if temp_input_path and os.path.exists(temp_input_path):
             os.remove(temp_input_path)
-        if os.path.exists(temp_output_path):
-            os.remove(temp_output_path)
-        if has_audio and os.path.exists(temp_audio_path):
+        if has_audio and temp_audio_path and os.path.exists(temp_audio_path):
             os.remove(temp_audio_path)
-        
-        # Serve the processed video
-        return send_file(
-            cached_video_path,
-            mimetype='video/mp4',
-            as_attachment=False
-        )
     
     except Exception as e:
-        logger.error(f"Error processing video: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error processing filters: {e}")
+        # Clean up on error
+        if temp_input_path and os.path.exists(temp_input_path):
+            os.remove(temp_input_path)
+        if temp_audio_path and os.path.exists(temp_audio_path):
+            os.remove(temp_audio_path)
+        raise
 
 
 if __name__ == "__main__":
