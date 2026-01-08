@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import VideoPlayer from './components/VideoPlayer';
 import { videoUrl } from './consts';
 
@@ -13,44 +13,32 @@ export interface FaceDetection {
   }
 
 const App: React.FC = () => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [response, setResponse] = useState<string>('');
-
-  const pingBackend = async () => {
-    try {
-      const res = await fetch('http://127.0.0.1:8080/hello-world');
-      const data = await res.text();
-      setResponse(data);
-      console.log('Backend response:', data);
-    } catch (error) {
-      console.error('Error pinging backend:', error);
-      setResponse('Error connecting to backend');
-    }
-  };
+  const processedVideoRef = useRef<HTMLVideoElement>(null);
+  
+  // Construct the processed video URL automatically
+  const encodedVideoUrl = encodeURIComponent(videoUrl);
+  const processedVideoUrl = `http://127.0.0.1:8080/get-processed-video?video_url=${encodedVideoUrl}`;
 
   return (
     <div className="container">
       <div style={{ textAlign: 'center' }}>
-        <div className="video-container">
-          <VideoPlayer
-            ref={videoRef}
-            src={videoUrl}
-            onLoadedMetadata={() => console.log('Video loaded')}
-          />
-        </div>
+        <h1>Video Segmentation with MediaPipe</h1>
+        <p style={{ color: '#666', marginBottom: '20px' }}>
+          Grayscale background filter is automatically applied
+        </p>
         
-        <div style={{ marginTop: '20px' }}>
-          <button 
-            onClick={pingBackend}
-            className="btn btn-primary"
-          >
-            Ping Backend
-          </button>
-          {response && (
-            <div style={{ marginTop: '10px', padding: '10px', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-              Response: {response}
-            </div>
-          )}
+        <div className="video-container" style={{ display: 'flex', justifyContent: 'center' }}>
+          <div>
+            <h3>Processed Video (Grayscale Background)</h3>
+            <VideoPlayer
+              ref={processedVideoRef}
+              src={processedVideoUrl}
+              onLoadedMetadata={() => console.log('Processed video loaded and ready')}
+            />
+            <p style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
+              Video is automatically processed with person segmentation
+            </p>
+          </div>
         </div>
       </div>
     </div>
